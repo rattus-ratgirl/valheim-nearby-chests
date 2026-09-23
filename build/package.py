@@ -17,6 +17,8 @@ import zipfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DLL = os.path.join(ROOT, "bin", "Release", "NearbyChests.dll")
 README = os.path.join(ROOT, "README.md")
+# A shorter, player-facing readme for the Thunderstore listing.
+TS_README = os.path.join(ROOT, "build", "THUNDERSTORE.md")
 CHANGELOG = os.path.join(ROOT, "CHANGELOG.md")
 PLUGIN_DIR = "BepInEx/plugins/NearbyChests/"
 PACK_PREFIX = "BepInExPack_Valheim/"
@@ -31,10 +33,11 @@ def thunderstore_manifest(version):
         # It can't be changed after the first upload.
         "name": "Nearby_Chests",
         "version_number": version,
-        "website_url": "https://robododd.com",
+        "website_url": "https://robododd.com/nearby-chests/",
         # 250 characters at most.
-        "description": "Craft, build and fuel stations from nearby chests. "
-                       "Stack sorts your items into the right chests, and Tidy cleans a chest up.",
+        "description": "Craft, build and fuel stations from nearby chests. Stack sorts your items into "
+                       "the right chests, Tidy cleans a chest up, pin slots Stack should skip, and "
+                       "Ctrl+click pulls build materials from chests.",
         "dependencies": [BEPINEX_DEPENDENCY],
     }
 
@@ -50,7 +53,7 @@ def check_thunderstore(manifest):
     size = struct.unpack(">II", header[16:24])
     if size != (256, 256):
         sys.exit(f"{ICON} is {size[0]}x{size[1]}, Thunderstore needs 256x256")
-    for path in (README, CHANGELOG):
+    for path in (README, TS_README, CHANGELOG):
         with open(path, encoding="utf-8") as f:
             f.read()
 
@@ -86,7 +89,7 @@ def main():
             # Thunderstore reads these four from the zip root. Mod managers install the rest.
             z.writestr("manifest.json", json.dumps(manifest, indent=2))
             z.write(ICON, "icon.png")
-            z.write(README, "README.md")
+            z.write(TS_README, "README.md")
             z.write(CHANGELOG, "CHANGELOG.md")
             z.write(DLL, "plugins/NearbyChests.dll")
         print(ts_zip)

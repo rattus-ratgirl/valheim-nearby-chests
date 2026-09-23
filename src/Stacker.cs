@@ -159,6 +159,8 @@ namespace NearbyChests
                 return false;
             if (Plugin.KeepHotbar.Value && item.m_gridPos.y == 0)
                 return false;
+            if (Plugin.IgnoreSlots.Value && IgnoredSlots.Contains(player, item.m_gridPos))
+                return false;
             if (Plugin.ExcludeFood.Value && IsFood(item))
                 return false;
             if (Plugin.ExcludeAmmo.Value && ItemGroups.IsAmmo(item.m_shared.m_itemType))

@@ -4,6 +4,7 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using UnityEngine;
 
 namespace NearbyChests
 {
@@ -12,7 +13,7 @@ namespace NearbyChests
     {
         public const string Guid = "NearbyChests";
         public const string ModName = "Nearby Chests";
-        public const string Version = "1.0.9";
+        public const string Version = "1.1.0";
 
         internal static ManualLogSource Log;
 
@@ -36,6 +37,11 @@ namespace NearbyChests
         internal static ConfigEntry<bool> TidyButton;
         internal static ConfigEntry<bool> TidyGathers;
         internal static ConfigEntry<bool> ShareChests;
+        internal static ConfigEntry<bool> IgnoreSlots;
+
+        internal static ConfigEntry<bool> PullBuildMaterials;
+        internal static ConfigEntry<KeyboardShortcut> PullBuildMaterialsKey;
+        internal static ConfigEntry<int> PullBuildSets;
 
         internal static readonly HashSet<ItemDrop.ItemData.ItemType> UnassignedTypes = new HashSet<ItemDrop.ItemData.ItemType>();
 
@@ -100,6 +106,21 @@ namespace NearbyChests
                 "to a nearby chest of their own category, an empty chest (which becomes that category's chest), " +
                 "or a junk chest (one that's mostly uncategorized items), " +
                 "then sorts the chest. Takes effect after a restart.");
+            IgnoreSlots = Config.Bind("Stacking", "IgnoreSlots", true,
+                "Middle-click a slot in your inventory to mark it ignored (a pin appears in its corner). " +
+                "Stack never moves whatever is in an ignored slot. Middle-click again to clear it. " +
+                "Marks are saved with your character.");
+
+            PullBuildMaterials = Config.Bind("Building", "PullBuildMaterials", true,
+                "With a piece selected on your hammer, press PullBuildMaterialsKey to pull that piece's " +
+                "materials from nearby chests (within CraftingRange) into your inventory, for building " +
+                "somewhere out of range. Each press adds enough for one more piece on top of what you carry.");
+            PullBuildMaterialsKey = Config.Bind("Building", "PullBuildMaterialsKey",
+                new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl),
+                "The key (with modifiers) that pulls the selected piece's materials. Default is Ctrl + left click.");
+            PullBuildSets = Config.Bind("Building", "PullBuildSets", 1,
+                new ConfigDescription("How many pieces' worth of materials each press adds.",
+                    new AcceptableValueRange<int>(1, 50)));
 
             ParseUnassignedTypes();
             ItemGroups.Load();

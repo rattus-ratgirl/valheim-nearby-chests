@@ -3,6 +3,17 @@
 Notable changes in each release. The section for a tagged version becomes that release's notes on
 GitHub, so keep the headings as `## <version> - <date>`.
 
+## 1.1.0 - 2026-09-23
+
+**Ignore a slot.** Middle-click a slot in your inventory and Stack leaves it alone. A pin in the
+slot's corner shows it's marked; middle-click again to clear it. The mark is on the slot, not the
+item, and is saved with your character. New `IgnoreSlots` setting, on by default.
+
+**Pull build materials.** With a piece selected on your hammer, Ctrl + left click pulls that piece's
+materials from nearby chests into your inventory, for building out of range. Each press adds one
+more piece's worth on top of what you carry. New `PullBuildMaterials`, `PullBuildMaterialsKey` and
+`PullBuildSets` settings.
+
 ## 1.0.9 - 2026-09-16
 
 **Tidy merges the smaller half too.** Tidying a chest with one trophy in it while another chest held

@@ -54,6 +54,18 @@ chests for you.
      chest you have open wins a tie.
    - Afterwards the chest is sorted.
 
+7. **Ignore a slot.** With your inventory open, **middle-click** a slot to mark it: a small pin appears
+   in its corner, and Stack never touches whatever is in that slot. Middle-click again to clear it.
+   The mark belongs to the slot, not the item, so a reserved slot stays reserved whatever you put in
+   it, and marks are saved with your character.
+
+   ![Inventory with pinned slots: the second row's slots each show a small pin in the corner](docs/ignored-slots.png)
+8. **Pull build materials.** With a piece selected on your hammer (or hoe, cultivator...),
+   **Ctrl + left click** pulls that piece's materials out of nearby chests into your inventory, ready
+   to carry somewhere out of range. Each press adds enough for one more piece on top of what you
+   already carry, and the click doesn't place anything. The on-screen message says what was pulled,
+   and what the chests were short of.
+
 Stacking leaves these in your inventory. Each has its own setting, and all are on by default:
 - **Food, meads and potions:** anything cooked, baked, crafted or brewed. Edible things you pick or
   harvest (berries, mushrooms, honey and so on) count as ingredients and still get stacked.
@@ -76,7 +88,10 @@ Carts and ships are off by default.
 
 ## Install
 
-Download the latest zip from [Releases](https://github.com/timothydodd/valheim-nearby-chests/releases):
+**With a mod manager:** install [Nearby Chests from Thunderstore](https://thunderstore.io/c/valheim/p/TeamRobo/Nearby_Chests/)
+with r2modman or Thunderstore Mod Manager. BepInEx comes along as a dependency.
+
+**By hand:** download the latest zip from [Releases](https://github.com/timothydodd/valheim-nearby-chests/releases):
 
 | File | Use it when |
 |---|---|
@@ -126,6 +141,10 @@ After the first launch, settings are in `BepInEx\config\NearbyChests.cfg`:
 | Stacking | ShareChests          | true             | When a group has no chest and there's no empty chest, let a one-group chest take a second, related group. |
 | Stacking | TidyButton           | true             | Show the Tidy button in the chest window (restart to apply). |
 | Stacking | TidyGathers          | true             | Tidy also pulls stray items of this chest's category in from other chests. |
+| Stacking | IgnoreSlots          | true             | Middle-click a slot in your inventory to mark it ignored; Stack never moves what's in it. |
+| Building | PullBuildMaterials   | true             | With a piece selected, the key below pulls its materials from nearby chests into your inventory. |
+| Building | PullBuildMaterialsKey | Mouse0 + LeftControl | The key (with modifiers) that pulls materials. Default is Ctrl + left click. |
+| Building | PullBuildSets        | 1                | How many pieces' worth of materials each press adds (1–50). |
 
 ### Item groups
 
@@ -192,6 +211,18 @@ button) and `Container.RPC_StackResponse` (holding Use on a chest). For each eli
 
 Chests that received items are then merged and sorted by type, group order, name, quality and stack
 size.
+
+**Ignored slots** (`IgnoredSlots.cs`) hang off the player grid: a postfix on `InventoryGrid.UpdateGui`
+adds a pin image to each slot element the first time it sees it and hooks the element's
+`UIInputHandler.m_onMiddleClick`, which the game leaves unused. The slot list is kept in the
+character's custom data (`Player.m_customData`), so it saves with the character, and `Stacker` skips
+any item whose grid position is marked.
+
+**Pulling build materials** (`BuildPull.cs`) is a prefix on `Player.UpdatePlacement`. When the
+shortcut is pressed in build mode it reads the selected piece's requirements, works out how many
+pieces you could already build from what you carry, and moves the shortfall for one more from the
+nearest chests into your inventory. It then clears the frame's input flag so the click doesn't also
+place the piece.
 
 **Tidy** (`Tidier.cs`) adds its button by cloning the chest window's Stack button in an
 `InventoryGui.Awake` postfix. The clone is resized to a square, and its label is swapped for an icon
