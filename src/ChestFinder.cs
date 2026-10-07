@@ -18,7 +18,21 @@ namespace NearbyChests
         private static Vector3 _cachedPos;
         private static float _cachedRange = -1f;
 
-        public static void Register(Container container) => Known.Add(container);
+        public static void Register(Container container)
+        {
+            if (Known.Add(container))
+                Invalidate();
+        }
+
+        // Preserve legacy direct-open handling only when the restriction is disabled.
+        internal static bool CanUseOpened(Container c, Player player) =>
+            !Plugin.OnlyUseMarkedChests.Value || (player != null && IsUsable(c,
+                player.transform.position, Plugin.StackingRange.Value * Plugin.StackingRange.Value,
+                Game.instance.GetPlayerProfile().GetPlayerID()));
+
+        internal static bool IsUsable(Container c, Player player, float range) =>
+            player != null && IsUsable(c, player.transform.position, range * range,
+                Game.instance.GetPlayerProfile().GetPlayerID());
 
         /// <summary>Drop cached results so the next query rescans.</summary>
         public static void Invalidate()
@@ -61,6 +75,8 @@ namespace NearbyChests
         {
             if (c == null || c.m_nview == null || !c.m_nview.IsValid() || c.GetInventory() == null)
                 return false;
+            if (!ChestSelection.Allows(c))
+                return false;
             if ((c.transform.position - playerPos).sqrMagnitude > rangeSq)
                 return false;
 
@@ -100,6 +116,8 @@ namespace NearbyChests
         /// </summary>
         public static bool EnsureOwner(Container c)
         {
+            if (c == null || c.m_nview == null || !c.m_nview.IsValid() || !ChestSelection.Allows(c))
+                return false;
             if (c.m_nview.IsOwner())
                 return true;
             if (c.m_nview.GetZDO().GetInt(ZDOVars.s_inUse) == 1)

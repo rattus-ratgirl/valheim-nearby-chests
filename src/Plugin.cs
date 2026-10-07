@@ -17,6 +17,7 @@ namespace NearbyChests
 
         internal static ManualLogSource Log;
 
+        internal static ConfigEntry<bool> OnlyUseMarkedChests;
         internal static ConfigEntry<bool> IncludeCartsAndShips;
         internal static ConfigEntry<float> CraftingRange;
         internal static ConfigEntry<float> StackingRange;
@@ -26,11 +27,13 @@ namespace NearbyChests
         internal static ConfigEntry<bool> StationsFromChests;
 
         internal static ConfigEntry<bool> StackToNearby;
+        internal static ConfigEntry<KeyboardShortcut> StackAndTidyKey;
         internal static ConfigEntry<bool> KeepHotbar;
         internal static ConfigEntry<bool> ExcludeFood;
         internal static ConfigEntry<bool> ExcludeAmmo;
         internal static ConfigEntry<bool> ExcludeEquipment;
         internal static ConfigEntry<bool> PlaceUnassignedItems;
+        internal static ConfigEntry<bool> DontFillEmptyChests;
         internal static ConfigEntry<string> UnassignedItemTypes;
         internal static ConfigEntry<bool> FallbackToOpenChest;
         internal static ConfigEntry<bool> SortAfterStack;
@@ -51,6 +54,9 @@ namespace NearbyChests
         {
             Log = Logger;
 
+            OnlyUseMarkedChests = Config.Bind("General", "OnlyUseMarkedChests", false,
+                "Only use marked chests. Select Include in NearbyChests in a chest window to include it. Disabling this restores legacy eligibility.");
+
             IncludeCartsAndShips = Config.Bind("General", "IncludeCartsAndShips", false,
                 "Also use the storage in nearby carts and ships.");
 
@@ -70,6 +76,11 @@ namespace NearbyChests
             StackingRange = Config.Bind("Stacking", "StackingRange", 15f,
                 new ConfigDescription("How far (in meters) a chest can be and still be used by Stack, Tidy and sorting.",
                     new AcceptableValueRange<float>(3f, 60f)));
+            StackAndTidyKey = Config.Bind("Stacking", "StackAndTidyKey",
+                new KeyboardShortcut(KeyCode.None),
+                "Stack your inventory, then tidy each eligible chest within StackingRange once. " +
+                "Works without opening a chest. None disables the shortcut. " +
+                "Independent of StackToNearby and TidyButton; respects chest and item restrictions.");
             StackToNearby = Config.Bind("Stacking", "StackToNearby", true,
                 "When you press the Stack button on an open chest, send your items to every nearby chest that already holds that item.");
             KeepHotbar = Config.Bind("Stacking", "KeepHotbar", true,
@@ -81,6 +92,9 @@ namespace NearbyChests
                 "Never stack arrows, bolts, bait or other ammo you're carrying.");
             ExcludeEquipment = Config.Bind("Stacking", "ExcludeEquipment", true,
                 "Never stack weapons, armor, shields, tools, torches, utility items or trinkets.");
+            DontFillEmptyChests = Config.Bind("Stacking", "DontFillEmptyChests", false,
+                "Don't automatically put items into completely empty chests, even when marked. " +
+                "Manual deposits are still allowed. Takes effect immediately.");
             PlaceUnassignedItems = Config.Bind("Stacking", "PlaceUnassignedItems", true,
                 "Items that no nearby chest holds yet go to the chest with the most similar items " +
                 "(metals with metals, hides with hides, same biome...), or into an empty chest if none match. " +
@@ -125,6 +139,7 @@ namespace NearbyChests
             ParseUnassignedTypes();
             ItemGroups.Load();
             UnassignedItemTypes.SettingChanged += (_, __) => ParseUnassignedTypes();
+            OnlyUseMarkedChests.SettingChanged += (_, __) => ChestFinder.Invalidate();
             CraftingRange.SettingChanged += (_, __) => ChestFinder.Invalidate();
             StackingRange.SettingChanged += (_, __) => ChestFinder.Invalidate();
             IncludeCartsAndShips.SettingChanged += (_, __) => ChestFinder.Invalidate();
@@ -132,6 +147,43 @@ namespace NearbyChests
             _harmony = new Harmony(Guid);
             _harmony.PatchAll(typeof(Plugin).Assembly);
             Logger.LogInfo($"{ModName} {Version} loaded");
+        }
+
+        private void Update()
+        {
+            Player player = Player.m_localPlayer;
+            KeyboardShortcut shortcut = StackAndTidyKey.Value;
+            if (player == null || shortcut.MainKey == KeyCode.None || !player.TakeInput()
+                || !ZInput.GetKeyDown(shortcut.MainKey))
+                return;
+            // Like BuildPull, allow movement keys alongside the configured modifiers.
+            foreach (KeyCode modifier in shortcut.Modifiers)
+            {
+                if (!ZInput.GetKey(modifier))
+                    return;
+            }
+
+            try
+            {
+                int stacked = Stacker.StackFromPlayer(null, false);
+                ChestFinder.Invalidate();
+                // Tidy rescans and mutates ChestFinder's shared list; keep our own ordered snapshot.
+                var chests = new List<Container>(ChestFinder.GetNearby(player, StackingRange.Value));
+                int tidied = 0;
+                foreach (Container chest in chests)
+                {
+                    if (ChestFinder.IsUsable(chest, player, StackingRange.Value)
+                        && Tidier.TidyChest(chest, false))
+                        tidied++;
+                }
+                player.Message(MessageHud.MessageType.Center, chests.Count == 0
+                    ? "No eligible nearby chests"
+                    : $"Stacked {stacked} items; tidied {tidied} {(tidied == 1 ? "chest" : "chests")}");
+            }
+            finally
+            {
+                ChestFinder.Invalidate();
+            }
         }
 
         private void OnDestroy()
