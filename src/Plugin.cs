@@ -186,7 +186,7 @@ namespace NearbyChests
             }
         }
 
-        private static bool ShortcutKeyPressed(KeyCode key, bool down)
+        internal static bool ShortcutKeyPressed(KeyCode key, bool down)
         {
             // Valheim rejects keycodes above 349, but Unity assigns F16-F24 values 670-678.
             if (key >= KeyCode.F16 && key <= KeyCode.F24)
