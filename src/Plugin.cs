@@ -154,12 +154,12 @@ namespace NearbyChests
             Player player = Player.m_localPlayer;
             KeyboardShortcut shortcut = StackAndTidyKey.Value;
             if (player == null || shortcut.MainKey == KeyCode.None || !player.TakeInput()
-                || !ZInput.GetKeyDown(shortcut.MainKey))
+                || !ShortcutKeyPressed(shortcut.MainKey, true))
                 return;
             // Like BuildPull, allow movement keys alongside the configured modifiers.
             foreach (KeyCode modifier in shortcut.Modifiers)
             {
-                if (!ZInput.GetKey(modifier))
+                if (!ShortcutKeyPressed(modifier, false))
                     return;
             }
 
@@ -184,6 +184,22 @@ namespace NearbyChests
             {
                 ChestFinder.Invalidate();
             }
+        }
+
+        private static bool ShortcutKeyPressed(KeyCode key, bool down)
+        {
+            // Valheim rejects keycodes above 349, but Unity assigns F16-F24 values 670-678.
+            if (key >= KeyCode.F16 && key <= KeyCode.F24)
+            {
+                var keyboard = UnityEngine.InputSystem.Keyboard.current;
+                if (keyboard == null)
+                    return false;
+                var inputKey = (UnityEngine.InputSystem.Key)((int)UnityEngine.InputSystem.Key.F16
+                    + (int)key - (int)KeyCode.F16);
+                var control = keyboard[inputKey];
+                return down ? control.wasPressedThisFrame : control.isPressed;
+            }
+            return down ? ZInput.GetKeyDown(key) : ZInput.GetKey(key);
         }
 
         private void OnDestroy()
