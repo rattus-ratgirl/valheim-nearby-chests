@@ -73,9 +73,9 @@ namespace NearbyChests
             var row = new GameObject("NearbyChests_Included", typeof(RectTransform), typeof(Toggle));
             var rect = (RectTransform)row.transform;
             rect.SetParent(__instance.m_container.transform, false);
-            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
-            rect.pivot = new Vector2(0f, 0f);
-            rect.anchoredPosition = new Vector2(12f, 8f);
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 0f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(12f, -8f);
             rect.sizeDelta = new Vector2(280f, 26f);
 
             var box = new GameObject("Box", typeof(RectTransform), typeof(Image));
