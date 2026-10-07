@@ -17,13 +17,13 @@ namespace NearbyChests
         public static bool ShortcutPressed()
         {
             KeyboardShortcut shortcut = Plugin.PullBuildMaterialsKey.Value;
-            if (shortcut.MainKey == KeyCode.None || !ZInput.GetKeyDown(shortcut.MainKey))
+            if (shortcut.MainKey == KeyCode.None || !Plugin.ShortcutKeyPressed(shortcut.MainKey, true))
                 return false;
             // Not KeyboardShortcut.IsDown(): that refuses to fire while any other key is held, and
             // people build while holding W.
             foreach (KeyCode modifier in shortcut.Modifiers)
             {
-                if (!ZInput.GetKey(modifier))
+                if (!Plugin.ShortcutKeyPressed(modifier, false))
                     return false;
             }
             return true;

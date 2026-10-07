@@ -8,6 +8,10 @@ chests for you.
 
 ## Features
 
+To restrict automatic operations to selected chests, enable `OnlyUseMarkedChests`, then open each
+chest and tick **Include in NearbyChests**. Existing and newly built chests start unmarked. The
+restriction is off by default; ordinary manual transfers remain available either way.
+
 1. **Craft and build from nearby chests.** Workbench/forge recipes, upgrades, and hammer builds
    can use materials sitting in chests within reach (30 m by default). The requirement counts in the
    crafting panel and build menu include those chests. Items you carry are spent first. After that the
@@ -19,29 +23,31 @@ chests for you.
    so the mod would be picking for you.
 3. **Stack to every nearby chest.** With a chest open, pressing **Stack** (or holding **E** on a
    chest) sends each stackable item in your inventory to every nearby chest that already holds
-   that item (15 m by default). The chest you're using gets first pick.
+   that item (15 m by default). The chest you're using gets first pick if it's eligible. Using an
+   unmarked chest can still send items to marked neighbours; it never marks the chest automatically.
 4. **New items find a home.** If no nearby chest holds an item yet (or its chests are full), the mod
    looks for somewhere similar:
    1. **A chest with similar items.** It picks the nearby chest holding the most items from the same
       group: metals, hides, wood, stone, raw ingredients, plants, cooked food, seeds, trophies, or
       materials from the same biome (Black Forest, Mountains and Swamp, Plains and Ocean, and so on).
       Items in no group at all share a single **catch-all chest** rather than taking a chest each.
-   2. **An empty chest.** If no chest has anything from that group, the item goes into an empty
-      chest. The one you're using comes first if it's empty, then the nearest. That chest becomes
-      the group's home next time.
-   3. **A shared chest.** Out of empty chests? A chest holding only one group takes this item's group
-      as a second one, preferring a related group.
+   2. **An empty chest.** This step is enabled unless `DontFillEmptyChests` is turned on. The eligible
+      chest you're using comes first if it's empty, then the nearest. That chest becomes the group's
+      home next time.
+   3. **A shared chest.** If no empty chest can be used, a chest holding only one group takes this
+      item's group as a second one, preferring a related group.
    4. **Your inventory.** If there's still nowhere to go, the item stays with you, and the on-screen
       message tells you how many were left over.
 5. **Tidy chests.** Every chest that receives items gets its partial stacks merged and its
    contents sorted by type, then group, then name.
 6. **Tidy button.** The chest window gets a small **Tidy** icon (three bars) just left of Place
-   stacks. It cleans out the chest you have open:
+   stacks. It cleans out the eligible chest you have open; with marked-only use enabled, Tidy does
+   nothing to an unmarked chest:
    - The chest's category is whichever group it holds the most of, for example Metals.
    - Anything that doesn't match moves to a nearby chest of its own category.
-   - If there's no chest for that category, it goes into an **empty chest**, which becomes that
-     category's chest from then on.
-   - If there are no empty chests left, it **shares a chest**: a chest holding just one group takes a
+   - If there's no chest for that category and `DontFillEmptyChests` is off, it goes into an
+     **empty chest**, which becomes that category's chest from then on.
+   - If no empty chest can be used, it **shares a chest**: a chest holding just one group takes a
      second one, preferring a related group (the one listed next to it in the groups file, so Raw
      pairs with Plants and Wood with Stone). A chest holding exactly two groups counts as home for
      both, so Tidy leaves it alone.
@@ -65,6 +71,12 @@ chests for you.
    to carry somewhere out of range. Each press adds enough for one more piece on top of what you
    already carry, and the click doesn't place anything. The on-screen message says what was pulled,
    and what the chests were short of.
+
+9. **Stack and tidy nearby chests.** Assign `StackAndTidyKey` in the config to stack your inventory
+   once, then tidy each eligible chest within `StackingRange`, nearest first. No chest needs to be
+   open. The shortcut respects chest marks, empty-chest protection, item exclusions and Tidy settings,
+   and shows one summary. It starts unbound (`None`), works independently of `StackToNearby` and
+   `TidyButton`, and does not repeat while held or activate while menus, inventory or chat are open.
 
 Stacking leaves these in your inventory. Each has its own setting, and all are on by default:
 - **Food, meads and potions:** anything cooked, baked, crafted or brewed. Edible things you pick or
@@ -120,31 +132,33 @@ To uninstall, delete `BepInEx\plugins\NearbyChests`. To remove BepInEx entirely,
 
 After the first launch, settings are in `BepInEx\config\NearbyChests.cfg`:
 
-| Section  | Setting              | Default          | What it does |
-|----------|----------------------|------------------|--------------|
-
-| General  | IncludeCartsAndShips | false            | Also use cart and ship storage. |
-| Crafting | CraftingRange        | 30               | Distance in meters a chest can be and still be used for crafting, upgrading and building (3–60). |
-| Crafting | CraftFromChests      | true             | Use chest materials at crafting stations. |
-| Crafting | BuildFromChests      | true             | Use chest materials when building. |
-| Crafting | StationsFromChests   | true             | Take fuel and ore from chests when feeding smelters, kilns, fires and cooking stations. Food and mead stay manual. |
-| Stacking | StackingRange        | 15               | Distance in meters a chest can be and still be used by Stack, Tidy and sorting (3–60). |
-| Stacking | StackToNearby        | true             | Stack button pushes to all nearby chests. Turn off for the vanilla button. |
-| Stacking | KeepHotbar           | true             | Never stack items from the top row. |
-| Stacking | ExcludeFood          | true             | Never stack food, meads or potions (anything cooked, crafted or brewed). Raw ingredients still stack. |
-| Stacking | ExcludeAmmo          | true             | Never stack arrows, bolts, bait or other ammo. |
-| Stacking | ExcludeEquipment     | true             | Never stack weapons, armor, shields, tools, torches, utility items or trinkets. |
-| Stacking | PlaceUnassignedItems | true             | Items with no home go to a chest of similar items, or an empty chest. |
-| Stacking | UnassignedItemTypes  | Material,Trophy  | Item types placed even when not in the groups file. They share the catch-all chest. Other options: Consumable, Ammo, AmmoNonEquipable, Fish, Misc. |
-| Stacking | FallbackToOpenChest  | false            | If there's no similar or empty chest, use the open chest instead of leaving items in your inventory. |
-| Stacking | SortAfterStack       | true             | Sort and merge chests that received items. |
-| Stacking | ShareChests          | true             | When a group has no chest and there's no empty chest, let a one-group chest take a second, related group. |
-| Stacking | TidyButton           | true             | Show the Tidy button in the chest window (restart to apply). |
-| Stacking | TidyGathers          | true             | Tidy also pulls stray items of this chest's category in from other chests. |
-| Stacking | IgnoreSlots          | true             | Middle-click a slot in your inventory to mark it ignored; Stack never moves what's in it. |
-| Building | PullBuildMaterials   | true             | With a piece selected, the key below pulls its materials from nearby chests into your inventory. |
-| Building | PullBuildMaterialsKey | Mouse0 + LeftControl | The key (with modifiers) that pulls materials. Default is Ctrl + left click. |
-| Building | PullBuildSets        | 1                | How many pieces' worth of materials each press adds (1–50). |
+| Section  | Setting               | Default              | What it does                                                                                                                                               |
+|----------|-----------------------|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| General  | OnlyUseMarkedChests   | false                | Only use chests marked with Include in NearbyChests. Applies to all automatic deposits and withdrawals.                                                    |
+| General  | IncludeCartsAndShips  | false                | Also use cart and ship storage.                                                                                                                            |
+| Crafting | CraftingRange         | 30                   | Distance in meters a chest can be and still be used for crafting, upgrading and building (3–60).                                                           |
+| Crafting | CraftFromChests       | true                 | Use chest materials at crafting stations.                                                                                                                  |
+| Crafting | BuildFromChests       | true                 | Use chest materials when building.                                                                                                                         |
+| Crafting | StationsFromChests    | true                 | Take fuel and ore from chests when feeding smelters, kilns, fires and cooking stations. Food and mead stay manual.                                         |
+| Stacking | StackingRange         | 15                   | Distance in meters a chest can be and still be used by Stack, Tidy and sorting (3–60).                                                                     |
+| Stacking | StackAndTidyKey       | None                 | Stack your inventory, then tidy all eligible chests within StackingRange once. Assign a key combination to enable.                                         |
+| Stacking | StackToNearby         | true                 | Stack button and hold-to-stack use eligible nearby chests. Turn off for vanilla stacking into the target chest; the marked-only restriction still applies. |
+| Stacking | KeepHotbar            | true                 | Never stack items from the top row.                                                                                                                        |
+| Stacking | ExcludeFood           | true                 | Never stack food, meads or potions (anything cooked, crafted or brewed). Raw ingredients still stack.                                                      |
+| Stacking | ExcludeAmmo           | true                 | Never stack arrows, bolts, bait or other ammo.                                                                                                             |
+| Stacking | ExcludeEquipment      | true                 | Never stack weapons, armor, shields, tools, torches, utility items or trinkets.                                                                            |
+| Stacking | PlaceUnassignedItems  | true                 | Items with no home go to a chest of similar items, or an empty chest when DontFillEmptyChests is off.                                                      |
+| Stacking | DontFillEmptyChests   | false                | Don't automatically deposit into completely empty chests, even when marked. Applies immediately.                                                           |
+| Stacking | UnassignedItemTypes   | Material,Trophy      | Item types placed even when not in the groups file. They share the catch-all chest. Other options: Consumable, Ammo, AmmoNonEquipable, Fish, Misc.         |
+| Stacking | FallbackToOpenChest   | false                | Use the eligible open chest as a last resort. Respects OnlyUseMarkedChests and DontFillEmptyChests.                                                        |
+| Stacking | SortAfterStack        | true                 | Sort and merge chests that received items.                                                                                                                 |
+| Stacking | ShareChests           | true                 | When a group has no chest and no empty chest can be used, let a one-group chest take a second, related group.                                              |
+| Stacking | TidyButton            | true                 | Show the Tidy button in the chest window (restart to apply).                                                                                               |
+| Stacking | TidyGathers           | true                 | Tidy also pulls stray items of this chest's category in from other chests.                                                                                 |
+| Stacking | IgnoreSlots           | true                 | Middle-click a slot in your inventory to mark it ignored; Stack never moves what's in it.                                                                  |
+| Building | PullBuildMaterials    | true                 | With a piece selected, the key below pulls its materials from nearby chests into your inventory.                                                           |
+| Building | PullBuildMaterialsKey | Mouse0 + LeftControl | The key (with modifiers) that pulls materials. Default is Ctrl + left click.                                                                               |
+| Building | PullBuildSets         | 1                    | How many pieces' worth of materials each press adds (1–50).                                                                                                |
 
 ### Item groups
 
@@ -172,6 +186,19 @@ Trophies = Trophy*
 The mod is written in C# and uses [Harmony](https://github.com/pardeike/Harmony) patches, like
 most Valheim mods.
 
+**Chest selection** (`ChestSelection.cs`) adds the checkbox to the existing chest panel and stores
+`NearbyChests.Included` as a boolean on the chest's ZDO. Vanilla networking and world saves carry
+this field; no server mod or custom protocol is needed. The checkbox writes only while the chest is
+open locally, accessible, and already network-owned locally. It changes metadata without saving the
+inventory or claiming ownership. Network ownership is separate from the player who placed the chest.
+
+`ChestFinder` applies the shared mark check alongside its existing range, access and busy-chest
+checks. Direct open-chest paths are guarded too, and mutations recheck the mark before claiming
+ownership. Local mark edits and `OnlyUseMarkedChests` changes invalidate the chest and count caches;
+a `ZDO.Deserialize` patch does the same when a changed mark arrives from another client.
+`DontFillEmptyChests` is checked at deposit time in the shared `Stacker.MoveInto` method, including
+Tidy transfers and open-chest fallback.
+
 **Crafting from chests** doesn't rewrite any of Valheim's crafting logic. The game already has
 methods that check whether you have a recipe's requirements (`Player.HaveRequirementItems`,
 `Player.HaveRequirements(Piece, ...)`, `Player.GetFirstRequiredItem`,
@@ -186,8 +213,8 @@ to nearby chests:
 
 Outside those scopes, the inventory behaves exactly like vanilla. That keeps the patches small, and
 recipe changes in game updates mostly just work. Nearby chest lookups and item counts are cached for
-a second and invalidated whenever a chest's contents change, because the crafting and build menus
-ask many times per frame.
+a second because the crafting and build menus ask many times per frame. Chest-content changes
+invalidate item counts; selection changes invalidate both caches.
 
 **Feeding stations** (`StationPatches.cs`) needs no station logic of its own, because adding fuel or
 ore is the game asking the player's inventory "do you have this?" and then "take one" - the same
@@ -206,8 +233,9 @@ button) and `Container.RPC_StackResponse` (holding Use on a chest). For each eli
 1. fills chests that already contain it,
 2. fills the chest holding the most items from the same group (`ItemGroups.cs`), or, for items in no
    group, the catch-all chest (the one that's mostly ungrouped items),
-3. fills an empty chest, which becomes that group's chest - or the catch-all chest - from then on,
-4. optionally falls back to the open chest (`FallbackToOpenChest`).
+3. fills an eligible empty chest when `DontFillEmptyChests` is off,
+4. tries a one-group chest when `ShareChests` is on,
+5. optionally falls back to the eligible open chest (`FallbackToOpenChest`), respecting the empty-chest setting.
 
 Chests that received items are then merged and sorted by type, group order, name, quality and stack
 size.
@@ -234,11 +262,11 @@ Each nearby chest's category is its most common group by stack count. Uncategori
 "junk", and ties go to the group listed first. Items in the open chest that don't match its category
 move to:
 1. chests of their category (dedicated chests first, then two-group chests holding it),
-2. an empty chest, which takes on that category,
+2. an empty chest when `DontFillEmptyChests` is off, which takes on that category,
 3. a one-group chest, which becomes a shared chest (closest group in file order first),
 4. junk chests.
 
-Then it gathers: items of the chest's own category are pulled out of every nearby chest whose own
+Then it gathers: items of the chest's own category are pulled out of eligible nearby chests whose own
 category differs, which covers shared chests, strays and junk chests. Another chest of the same
 category is drained too, unless it holds more of the category than the open one, so a split group
 merges into one chest and can't bounce back on the next tidy.
@@ -255,9 +283,13 @@ dishes like deer stew and sausages are feast ingredients.
 
 ## Multiplayer
 
-The mod is client-side, so only you need it and the server doesn't. Before changing a chest, it takes
-network ownership of it, the same way the game's own "Take All" does, and it skips any chest another
-player has open. There is a small timing window: if another player changes a chest in the same
+The mod is client-side, so only you need it and the server doesn't. Chest marks are shared world
+state: another player using the mod can change a mark when they can open the chest. Unmodded clients
+can use storage normally and do not enforce the restriction. Remote mark changes take effect when
+their vanilla network update arrives.
+
+Before transferring items, the mod takes network ownership of the chest, the same way the game's
+own "Take All" does, and it skips any chest another player has open. There is a small timing window: if another player changes a chest in the same
 moment you craft from it or stack into it, one of the changes can be lost.
 
 ## Building
